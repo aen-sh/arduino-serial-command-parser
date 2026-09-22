@@ -24,6 +24,7 @@ void loop() {
       if (bufferIndex < BUFFER_SIZE - 1) {
         inputBuffer[bufferIndex] = c;
         bufferIndex++;
+        Serial.print(c);
       } else {
         Serial.println("ERROR: Input too long, buffer reset");
         bufferIndex = 0;
