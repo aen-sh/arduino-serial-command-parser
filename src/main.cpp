@@ -1,18 +1,33 @@
 #include <Arduino.h>
 
-// put function declarations here:
-int myFunction(int, int);
+const int BUFFER_SIZE = 64;
+char inputBuffer[BUFFER_SIZE];
+int bufferIndex = 0;
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+  Serial.begin(9600);
+  Serial.println("Ready. Type something and press Enter");
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
+  while (Serial.available() > 0) {
+    char c = Serial.read();
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+    if (c == '\n') {
+      inputBuffer[bufferIndex] = '\0';
+
+      Serial.print("You typed: ");
+      Serial.println(inputBuffer);
+
+      bufferIndex = 0;
+    } else if (c != '\r') {
+      if (bufferIndex < BUFFER_SIZE - 1) {
+        inputBuffer[bufferIndex] = c;
+        bufferIndex++;
+      } else {
+        Serial.println("ERROR: Input too long, buffer reset");
+        bufferIndex = 0;
+      }
+    }
+  }
 }
