@@ -1,5 +1,18 @@
 #include <Arduino.h>
 
+enum State {
+  IDLE,
+  BLINKING
+};
+
+State currentState = IDLE;
+
+int totalBlinks = 0;
+int countBlinks = 0;
+unsigned long lastBlinkTime = 0;
+bool ledState = false;
+
+
 const int BUFFER_SIZE = 64;
 char inputBuffer[BUFFER_SIZE];
 int bufferIndex = 0;
@@ -32,6 +45,19 @@ void loop() {
       }
     }
   }
+
+  if (currentState == BLINKING) {
+    if (millis() - lastBlinkTime >= 200) {
+      ledState = !ledState;
+      digitalWrite(LED_PIN, ledState);
+      lastBlinkTime = millis();
+      countBlinks++;
+      if (countBlinks >= totalBlinks * 2) {
+        currentState = IDLE;
+        Serial.println("OK: blink done");
+      }
+    }
+  }
 }
 
 void processCommand(char* input) {
@@ -46,12 +72,16 @@ void processCommand(char* input) {
 
   if (strcmp(command, "LED") == 0) {
     if (argument == NULL) {
-      Serial.println("ERROR: missing argument (ON\OFF)");
+      Serial.println("ERROR: missing argument (ON/OFF)");
     } else if (strcmp(argument, "ON") == 0) {
       digitalWrite(LED_PIN, HIGH);
+      currentState = IDLE;
+      ledState = true;
       Serial.println("OK: LED is ON");
     } else if (strcmp(argument, "OFF") == 0) {
       digitalWrite(LED_PIN, LOW);
+      currentState = IDLE;
+      ledState = false;
       Serial.println("OK: LED is OFF");
     } else {
       Serial.println("ERROR: invalid argument, expected ON/OFF");
@@ -60,17 +90,15 @@ void processCommand(char* input) {
     if (argument == NULL) {
       Serial.println("ERROR: missing argument (number)");
     } else {
-      int  times = atoi(argument);
-      if (times <= 0) {
+      totalBlinks = atoi(argument);
+      if (totalBlinks <= 0) {
         Serial.println("ERROR: invalid argument, expected positive number");
       } else {
-        for (int i = 0; i < times; i++) {
-          digitalWrite(LED_PIN, HIGH);
-          delay(200);
-          digitalWrite(LED_PIN, LOW);
-          delay(200);
-        }
-        Serial.println("OK: blink done");
+        countBlinks = 0;
+        lastBlinkTime = millis();
+        currentState = BLINKING;
+
+        Serial.println("OK: blink started");
       }
     }
 
